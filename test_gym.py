@@ -1,4 +1,6 @@
 from cartpole import CartPoleEnv
+import gym
+import numpy as np
 
 def choose_action(state):
     action = 0
