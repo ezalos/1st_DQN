@@ -64,14 +64,14 @@ def bellman_q(state, qt, cart, depth = config.future_steps, action = None,
     if (action == None):
         action = choose_greedy_action(state, qt)
     new_state, reward, terminal, _ = cart.step(action)
-    # reward = config.reward_values.get(int(reward), 0)
-    print("rewa:" , reward)
-    q = reward
+    q = 0 if terminal else 1
+    reward = config.reward_values.get(int(q), 0)
+    # print("rewa:" , reward, "terminal: ", terminal)
     if (depth != 0 and not terminal):
         return q + discount_factor * (bellman_q(new_state, qt, cart, depth - 1))
     else:
-        # return (q + (discount_factor * max(qt[state_to_qt_coord(state)])))
-        return q
+        return (q + (discount_factor * max(qt[state_to_qt_coord(state)])))
+        # return q
 
 
 def update_qt(qt, state, action, temporal_difference_target, learning_rate = config.learning_rate):
@@ -90,8 +90,8 @@ def dummy_cart(s, cart = None):
     
 
 def graph(data, rm):
-    
-    plt.scatter(list(range(len(data))), data, s=1, c="b")
+    if False:
+        plt.scatter(list(range(len(data))), data, s=1, c="b")
     plt.plot(rm, c="r")
     # plt.autoscale_view()
     plt.pause(0.05)
@@ -120,7 +120,7 @@ def loop(qt = None, epsilon = 1, visu = False):
             a = choose_action(s, qt)
             _, _, end, _ = cart.step(a)
             l_val = bellman_q(s, qt, dummy_cart(s), action = a)
-            print(l_val)
+            # print(l_val)
             update_qt(qt, s, a, l_val)
             s = cart.state
             turn += 1
