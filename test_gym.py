@@ -14,13 +14,13 @@ if __name__ == "__main__":
     cart = CartPoleEnv()
     cart.reset()
     action = 0
-    while True:
-        cart.render()
-        state, reward, end, thing = cart.step(action)
-        print(state)
-        if end:
-            cart.reset()
-        else:
-            action = choose_action(state)
-    cart.close()
+    # while True:
+    #     cart.render()
+    #     state, reward, end, thing = cart.step(action)
+    #     print(state)
+    #     if end:
+    #         cart.reset()
+    #     else:
+    #         action = choose_action(state)
+    # cart.close()
 
