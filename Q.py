@@ -2,7 +2,7 @@ import numpy as np
 from config import config
 import random
 import matplotlib.pyplot as plt
-
+import pickle
 
 def initialize_Qtable(sizes = config.qt_size_array):
     qt = np.zeros(config.qt_size_array + [2])
@@ -153,19 +153,18 @@ def update_qt_new(qt, current_state, reward, action, new_state,
     qt[state_to_qt_coord(current_state)][action] = Qsa
 
 
-def looping(qt = None, epsilon = 1, visu = False):
+def looping(qt = None, epsilon = config.epsilon, visu = False):
     plt.ion()
     cart = CartPoleEnv()
     data = []
     data_rm = []
-    epsilon = config.epsilon
     if (qt is None):
         qt = initialize_Qtable()
     for episode in range(config.episodes):
         cart.reset()
         turn = 0
         end = False
-        epsilon = epsilon * 0.99
+        epsilon = epsilon * 0.9999
         while not end:
             current_state = cart.state
             action = choose_action(current_state, qt, epsilon)
@@ -190,4 +189,6 @@ from cartpole import CartPoleEnv
 
 if __name__ == "__main__":
     data, qt = looping()
+    pickle.dump(qt, open( "bigqt.p", "wb+" ) )
+
 
