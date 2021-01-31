@@ -81,6 +81,7 @@ def update_qt(qt, state, action, temporal_difference_target, learning_rate = con
     qt[coords][action] = (1 - learning_rate) * old_value + learning_rate * temporal_difference
 
 
+
 def dummy_cart(s, cart = None):
     if cart == None:
         cart = CartPoleEnv()
@@ -135,8 +136,58 @@ def loop(qt = None, epsilon = 1, visu = False):
     cart.close()
     return (data, qt)
 
+
+def get_q_state_action(qt, s, a):
+    return (qt[state_to_qt_coord(s)][a])
+
+def get_q_max_state_action(qt, s):
+    return (max(qt[state_to_qt_coord(s)]))
+
+def update_qt_new(qt, current_state, reward, action, new_state,
+            learning_rate = config.learning_rate,
+            lidl_factor = config.discount_factor):
+
+    Qsa =  get_q_state_action(qt, current_state, action)
+    Qsa_max_next = get_q_max_state_action(qt, new_state)
+    Qsa = Qsa + learning_rate * (reward + (lidl_factor * Qsa_max_next) - Qsa)
+    qt[state_to_qt_coord(current_state)][action] = Qsa
+
+
+def looping(qt = None, epsilon = 1, visu = False):
+    plt.ion()
+    cart = CartPoleEnv()
+    data = []
+    data_rm = []
+    epsilon = config.epsilon
+    if (qt is None):
+        qt = initialize_Qtable()
+    for episode in range(config.episodes):
+        cart.reset()
+        turn = 0
+        end = False
+        epsilon = epsilon * 0.99
+        while not end:
+            current_state = cart.state
+            action = choose_action(current_state, qt, epsilon)
+            new_state, reward, end, _ = cart.step(action)
+            if end:
+                reward = -10
+            update_qt_new(qt, current_state, reward, action, new_state)
+            turn += 1
+            if (visu):
+                cart.render()
+        data.append(turn)
+        data_rm.append(np.mean(data[-100:]))
+        print("Episode: ", episode, "\tTurn:", turn, "\t Epsilon:", epsilon)
+        if episode % config.graph_update == 0 and episode != 0:
+            graph(data, data_rm)
+        # if ((episode + 1) % 100 == 0 and input("continue (y/n)" != "y")):
+        #     break
+    cart.close()
+    return (data, qt)  
+
 from cartpole import CartPoleEnv
 
 if __name__ == "__main__":
-    data, qt = loop()
+    data, qt = looping()
 
