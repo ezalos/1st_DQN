@@ -13,13 +13,13 @@ config.discretisation_method = "sqrt"  # sqrt, linear
 config.reward_values = {0 : -10, 1 : 1}
 config.future_steps = 5
 config.discount_factor = 0.9
-config.learning_rate = 0.7
-config.epsilon = 0.9
-config.episodes = 10000
+config.learning_rate = 0.02
+config.epsilon = 0.7
+config.episodes = 100000
 
 if (config.discretisation_method == "sqrt"):
     config.transfo = lambda x: (abs(x) ** 0.5) * (x / abs(x)) if x != 0 else 0
 else:
     config.transfo = lambda x: x
 
-config.graph_update = 4500
+config.graph_update = 5000
