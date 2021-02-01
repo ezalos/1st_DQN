@@ -20,7 +20,7 @@ for i, o in zip(net_config.layers[:-1], net_config.layers[1:]):
 
 class DQN():
     def __init__(self, layers = net_config.layers):
-        self.model = nn.Sequential(netlist)
+        self.model = nn.Sequential(*netlist)
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), net_config.learning_rate)
 
@@ -46,29 +46,35 @@ def choose_action(q_values, epsilon = config.epsilon):
         return random.randint(0,1)
 
 def learn_from_memory(net:DQN, memory):
-    for state, action, q_values, new_state, reward in memory:
-        net.update(state, q_values)
+    net.update(memory[0:], memory[:1])
 
+from plot_data import PlotData
 
 def learn_ma_boy(env, main_net, target_net, memory_size = 20,
     n_update = net_config.n_update, gamma = config.discount_factor, epsilon = config.epsilon, eps_decay = 0.99, episodes = config.episodes):
-
+    plot_data = PlotData()
     memory = []
-    for episode in episodes:
-        state, reward, done, _ = env.reset()
+    for episode in range(episodes):
+        state = env.reset()
         total = 0
+        done =  False
         while not done:
-            q_values = target_net.predict(state).item()
+            q_values = target_net.predict(state)
             action = choose_action(q_values)
             new_state, reward, done, _ = env.step(action)
-            q_values[action] = reward + gamma * target_net.predict(state).item()[action]
-            memory.append(state, action, q_values, new_state, reward)
+            if (done):
+                reward = -10
+            q_values[action] = reward + gamma * target_net.predict(state)[action]
+            memory.append([state, q_values])
             state = new_state
             total += reward
+        plot_data.new_data(total)
+
         if (episode != 0 and episode % n_update == 0):
             learn_from_memory(main_net, memory)
             target_net = copy.deepcopy(main_net)
-            print(total / n_update)
+            plot_data.graph()
+            
     
 
 from cartpole import CartPoleEnv

@@ -14,7 +14,7 @@ config.reward_values = {0 : -10, 1 : 1}
 config.future_steps = 5
 config.discount_factor = 0.9
 config.learning_rate = 0.02
-config.epsilon = 0.7
+config.epsilon = 0.9
 config.episodes = 100000
 
 if (config.discretisation_method == "sqrt"):
@@ -31,4 +31,4 @@ net_config = DotDict()
 net_config.layers = [4,4,4,2]
 net_config.learning_rate = 0.005
 net_config.gamma = 0.9
-net_config.n_update = 20
+net_config.n_update = 100
