@@ -70,6 +70,8 @@ class CuteLearning():
         self.updat_net = deepcopy(self.predi_net)
         self.turn = 0
         self.epidode = 0
+        self.epsilon = config.epsilon
+        self.eps_decay = 0.99
 
     def learn(self):
         self.turn = 0
@@ -78,7 +80,7 @@ class CuteLearning():
         while True:
             state = self.cart.state
             y = self.predi_net.predict(state)
-            a = choose_action_net(y)
+            a = choose_action_net(y, self.epsilon)
             next_state, _, end, _ = self.cart.step(a)
             reward = -10 if end else 1
 
@@ -99,11 +101,12 @@ class CuteLearning():
     def end(self):
         self.episode += 1
         self.plot_data.new_data(self.turn)
-        print("Episode: ", self.episode, "\tTurn:", self.turn, "\t Epsilon:", config.epsilon)
+        print("Episode: ", self.episode, "\tTurn:", self.turn, "\t Epsilon:", self.epsilon)
         self.turn = 0
         self.cart.reset()
         if self.episode % config.graph_update == 0 and self.episode != 0:
             self.plot_data.graph()
+        self.epsilon = max(self.epsilon * self.eps_decay, 0.01)
 
 if __name__ == "__main__":
     Cutie = CuteLearning()

@@ -46,7 +46,8 @@ def choose_action(q_values, epsilon = config.epsilon):
         return random.randint(0,1)
 
 def learn_from_memory(net:DQN, memory):
-    net.update(memory[0:], memory[:1])
+    for state, q_values in memory:
+        net.update(state, q_values)
 
 from plot_data import PlotData
 
@@ -65,7 +66,7 @@ def learn_ma_boy(env, main_net, target_net, memory_size = 20,
             if (done):
                 reward = -10
             q_values[action] = reward + gamma * target_net.predict(state)[action]
-            memory.append([state, q_values])
+            memory.append((state, q_values))
             state = new_state
             total += reward
         plot_data.new_data(total)
