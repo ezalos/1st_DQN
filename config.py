@@ -23,10 +23,12 @@ else:
     config.transfo = lambda x: x
 
 config.graph_update = 1000
+config.graph_running_mean = 100
 
 
 net_config = DotDict()
 
 net_config.layers = [4,4,4,2]
 net_config.learning_rate = 0.005
+net_config.gamma = 0.9
 net_config.n_update = 20
