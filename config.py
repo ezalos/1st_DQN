@@ -22,10 +22,11 @@ if (config.discretisation_method == "sqrt"):
 else:
     config.transfo = lambda x: x
 
-config.graph_update = 5000
+config.graph_update = 1000
 
 
 net_config = DotDict()
 
-net_config.layers = [4,64,128,2]
-net.learning_rate = 0.05
+net_config.layers = [4,4,4,2]
+net_config.learning_rate = 0.005
+net_config.n_update = 20
