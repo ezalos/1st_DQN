@@ -74,6 +74,7 @@ class CuteLearning():
         self.eps_decay = 0.999
         self.visu = False
         self.visu_update = 300
+        self.visu_window = 5
 
     def learn(self):
         self.turn = 0
@@ -111,7 +112,7 @@ class CuteLearning():
         if self.visu_update:
             if self.episode % self.visu_update == 0:
                 self.visu = True
-            if self.episode % self.visu_update == 5:
+            if self.episode % self.visu_update == self.visu_window:
                 self.visu = False
                 self.cart.close()
         self.epsilon = max(self.epsilon * self.eps_decay, 0.01)
