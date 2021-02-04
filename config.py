@@ -22,7 +22,7 @@ if (config.discretisation_method == "sqrt"):
 else:
     config.transfo = lambda x: x
 
-config.graph_update = 1000
+config.graph_update = 500
 config.graph_running_mean = 100
 
 

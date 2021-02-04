@@ -71,7 +71,9 @@ class CuteLearning():
         self.turn = 0
         self.epidode = 0
         self.epsilon = config.epsilon
-        self.eps_decay = 0.99
+        self.eps_decay = 0.999
+        self.visu = False
+        self.visu_update = 300
 
     def learn(self):
         self.turn = 0
@@ -88,25 +90,32 @@ class CuteLearning():
             y[a] = reward + net_config.gamma * torch.max(q_values_next).item()
             self.updat_net.update(state, y)
             self.turn += 1
-
+            if self.visu:
+                self.cart.render()
             if n % net_config.n_update == 0 and n:
                 self.predi_net = deepcopy(self.updat_net)
             if end:
                 self.end()
-
             n += 1
+
         self.cart.close()
         self.plot_data.clear()
 
     def end(self):
-        self.episode += 1
         self.plot_data.new_data(self.turn)
         print("Episode: ", self.episode, "\tTurn:", self.turn, "\t Epsilon:", self.epsilon)
         self.turn = 0
         self.cart.reset()
         if self.episode % config.graph_update == 0 and self.episode != 0:
             self.plot_data.graph()
+        if self.visu_update:
+            if self.episode % self.visu_update == 0:
+                self.visu = True
+            if self.episode % self.visu_update == 5:
+                self.visu = False
+                self.cart.close()
         self.epsilon = max(self.epsilon * self.eps_decay, 0.01)
+        self.episode += 1
 
 if __name__ == "__main__":
     Cutie = CuteLearning()
