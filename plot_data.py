@@ -7,11 +7,14 @@ class PlotData():
         plt.ion()
         self.points = []
         self.running_mean = []
+        self.running_mean_big = []
         self.running_mean_len = running_mean_len
+        self.running_mean_big_len = running_mean_len * 5
 
     def new_data(self, new_point):
         self.points.append(new_point)
         self.running_mean.append(np.mean(self.points[-self.running_mean_len:]))
+        self.running_mean_big.append(np.mean(self.points[-self.running_mean_big_len:]))
         pass
 
     def clear(self):
@@ -20,9 +23,14 @@ class PlotData():
         self.running_mean = []
 
     def graph(self):
-        if False:
-            plt.scatter(list(range(len(data))), data, s=1, c="b")
-        plt.plot(self.running_mean, c="r")
+        if True:
+            plt.scatter(list(range(len(self.points))), self.points, s=.05, c="k")
+        plt.plot(self.running_mean, c="b")
+        plt.plot(self.running_mean_big, c="r")
         # plt.autoscale_view()
         plt.pause(0.05)
         plt.show()
+
+    def save(self, name):
+        self.graph()
+        plt.savefig(name + ".png")

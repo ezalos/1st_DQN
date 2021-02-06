@@ -1,9 +1,11 @@
+from datetime import datetime
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from collections import OrderedDict
 
+import matplotlib.pyplot as plt
 from config import net_config
 from copy import deepcopy
 import random
@@ -12,17 +14,25 @@ from config import config
 
 from cartpole import CartPoleEnv
 
+import pickle
+from datetime import datetime
+
+import json
 
 dico = OrderedDict()
-
 
 netlist = []
 n = 0
 for i, o in zip(net_config.layers[:-1], net_config.layers[1:]):
+    print("Layer ", n, "[", i, ":", o, "]")
     if (n != 0):
         netlist.append(nn.LeakyReLU())
     netlist.append(nn.Linear(i, o))
+    if n != 0 and n != len(net_config.layers[:-1]) - 1:
+        print("Dropout")
+        # netlist.append(nn.Dropout(net_config.dropout))
     n += 1
+
 
 class DQN():
     def __init__(self, layers = net_config.layers):
@@ -73,8 +83,11 @@ class CuteLearning():
         self.epsilon = config.epsilon
         self.eps_decay = 0.999
         self.visu = False
-        self.visu_update = 300
+        self.visu_update = 0
         self.visu_window = 5
+        self.consecutive_wins = 0
+        self.best_consecutive_wins = 0
+        self.last_save = 0
 
     def learn(self):
         self.turn = 0
@@ -85,8 +98,11 @@ class CuteLearning():
             y = self.predi_net.predict(state)
             a = choose_action_net(y, self.epsilon)
             next_state, _, end, _ = self.cart.step(a)
-            reward = -10 if end else 1
-
+            reward = -25 if end else 1
+            if reward == 1:
+                reward += (((abs((0.418 / 2) - abs(next_state[2])) / (0.418 / 2)) * 2) - 1) * 2
+                reward += (((abs((4.8 / 2) - abs(next_state[0])) / 2.4) * 2) - 1) * 2
+                #reward += abs((2.4) - abs(state[0])) * .6
             q_values_next = self.predi_net.predict(next_state)
             y[a] = reward + net_config.gamma * torch.max(q_values_next).item()
             self.updat_net.update(state, y)
@@ -95,6 +111,8 @@ class CuteLearning():
                 self.cart.render()
             if n % net_config.n_update == 0 and n:
                 self.predi_net = deepcopy(self.updat_net)
+            if self.turn >= 500:
+                end = True
             if end:
                 self.end()
             n += 1
@@ -104,7 +122,20 @@ class CuteLearning():
 
     def end(self):
         self.plot_data.new_data(self.turn)
-        print("Episode: ", self.episode, "\tTurn:", self.turn, "\t Epsilon:", self.epsilon)
+        if self.turn > 195:
+            self.consecutive_wins += 1
+            if self.best_consecutive_wins < self.consecutive_wins:
+                self.best_consecutive_wins = self.consecutive_wins
+            if self.consecutive_wins > 200:
+                print(("WIN IN " + str(self.episode) + " EPISODES\n") * 100)
+        else:
+            self.consecutive_wins = 0
+            if self.last_save * 1.2 < self.best_consecutive_wins and 50 <= self.best_consecutive_wins:
+                self.save()
+                self.last_save = self.best_consecutive_wins
+        print("Episode: ", self.episode, "\tTurn:",
+              self.turn, "\tEpsilon:", self.epsilon,
+              "\tWins: ", self.consecutive_wins)
         self.turn = 0
         self.cart.reset()
         if self.episode % config.graph_update == 0 and self.episode != 0:
@@ -117,6 +148,20 @@ class CuteLearning():
                 self.cart.close()
         self.epsilon = max(self.epsilon * self.eps_decay, 0.01)
         self.episode += 1
+
+    def save(self):
+        name = "model_cache/"
+        name += str(self.best_consecutive_wins) + "Wins"
+        name += "_"
+        name += str(self.epidode) + "Episodes"
+        name += "_"
+        now = datetime.now()
+        name += now.strftime("%d-%m %H:%M")
+        with open(name + ".mdl", "wb+") as f:
+            pickle.dump(self, f)
+        self.plot_data.save(name)
+        with open(name + ".json", "w+") as f:
+            json.dump(net_config, f, indent=4)
 
 if __name__ == "__main__":
     Cutie = CuteLearning()
