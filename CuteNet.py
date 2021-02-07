@@ -83,7 +83,7 @@ class CuteLearning():
         self.epsilon = config.epsilon
         self.eps_decay = 0.999
         self.visu = False
-        self.visu_update = 0
+        self.visu_update = 300
         self.visu_window = 5
         self.consecutive_wins = 0
         self.best_consecutive_wins = 0
@@ -161,7 +161,8 @@ class CuteLearning():
             pickle.dump(self, f)
         self.plot_data.save(name)
         with open(name + ".json", "w+") as f:
-            json.dump(net_config, f, indent=4)
+            json.dump([config, net_config], f, indent=4,
+                      default=lambda o: '<not serializable>')
 
 if __name__ == "__main__":
     Cutie = CuteLearning()

@@ -4,7 +4,8 @@ from config import config
 
 class PlotData():
     def __init__(self, running_mean_len = config.graph_running_mean):
-        plt.ion()
+        if config.graph_window:
+            plt.ion()
         self.points = []
         self.running_mean = []
         self.running_mean_big = []
@@ -24,12 +25,13 @@ class PlotData():
 
     def graph(self):
         if True:
-            plt.scatter(list(range(len(self.points))), self.points, s=.05, c="k")
+            plt.scatter(list(range(len(self.points))), self.points, s=.05, c="y")
         plt.plot(self.running_mean, c="b")
         plt.plot(self.running_mean_big, c="r")
         # plt.autoscale_view()
-        plt.pause(0.05)
-        plt.show()
+        if config.graph_window:
+            plt.pause(0.05)
+            plt.show()
 
     def save(self, name):
         self.graph()
