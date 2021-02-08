@@ -43,8 +43,10 @@ class DQN():
     def update(self, state, y):
         y_pred = self.model(torch.Tensor(state))
         loss = 0
-        for i in range(len(y)):
-            loss += self.criterion(y_pred[i], y[i])
+        # for i in range(len(y)):
+        #     loss += self.criterion(y_pred[i], y[i])
+        # print(y_pred, y)
+        loss = self.criterion(y_pred[0], y[0])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
