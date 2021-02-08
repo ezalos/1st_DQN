@@ -1,3 +1,4 @@
+from torch.autograd import Variable
 from datetime import datetime
 import torch
 import torch.nn as nn
@@ -41,7 +42,9 @@ class DQN():
 
     def update(self, state, y):
         y_pred = self.model(torch.Tensor(state))
-        loss = self.criterion(y_pred, y)
+        loss = 0
+        for i in range(len(y)):
+            loss += self.criterion(y_pred[i], y[i])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -66,6 +69,7 @@ def graph(data, rm):
     # plt.autoscale_view()
     plt.pause(0.05)
     plt.show()
+
 
 from plot_data import PlotData
 
@@ -126,13 +130,13 @@ class CuteLearning():
 
                 self.turn += 1
                 self.memory.append((state, a, next_state, reward, end))
-                self.updat_net.update(state, q_values)
-                # states.append(state)
-                # targets.append(q_values)
-                # if (self.turn % 20 and self.turn) or end:
-                #     self.updat_net.update(states, targets)
-                #     states = []
-                #     targets = []
+                # self.updat_net.update(state, q_values)
+                states.append(state)
+                targets.append(q_values)
+                if (self.turn % 20 and self.turn) or end:
+                    self.updat_net.update(states, targets)
+                    states = []
+                    targets = []
 
                 if self.turn >= 500:
                     end = True
@@ -155,6 +159,8 @@ class CuteLearning():
         if size > len(self.memory):
             size = len(self.memory)
         data = random.sample(self.memory, size)
+        states = []
+        targets = []
         for state, action, next_state, reward, done in data:
             q_values = self.predi_net.predict(state)
             if done:
@@ -164,7 +170,9 @@ class CuteLearning():
                 # It ensures that next q values are predicted with the target network.
                 q_values_next = self.predi_net.predict(next_state)
                 q_values[action] = reward + net_config.gamma * torch.max(q_values_next).item()
-            self.updat_net.update(state, q_values)
+            states.append(state)
+            targets.append(q_values)
+        self.updat_net.update(state, q_values)
 
 
     def end(self):
@@ -201,7 +209,7 @@ class CuteLearning():
         name = "model_cache/"
         name += str(self.best_consecutive_wins) + "Wins"
         name += "_"
-        name += str(self.epidode) + "Episodes"
+        name += str(self.episode) + "Episodes"
         name += "_"
         now = datetime.now()
         name += now.strftime("%d-%m %H:%M")
