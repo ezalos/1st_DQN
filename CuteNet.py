@@ -19,7 +19,6 @@ from datetime import datetime
 
 import json
 
-dico = OrderedDict()
 
 netlist = []
 n = 0
@@ -60,7 +59,6 @@ def choose_action_net(y_pred, epsilon = config.epsilon):
     else:
         return random.randint(0,1)
 
-
 def graph(data, rm):
     if False:
         plt.scatter(list(range(len(data))), data, s=1, c="b")
@@ -81,44 +79,91 @@ class CuteLearning():
         self.turn = 0
         self.epidode = 0
         self.epsilon = config.epsilon
-        self.eps_decay = 0.999
+        self.eps_decay = 0.99
         self.visu = False
-        self.visu_update = 300
+        self.visu_update = False#300
         self.visu_window = 5
         self.consecutive_wins = 0
         self.best_consecutive_wins = 0
         self.last_save = 0
+        self.memory = []
 
+    def reward_optimisation(self, state, end):
+        reward = -25 if end else 1
+        if reward == 1:
+            # Angle reward modification
+            angle_r = 0.418 / 2
+            reward += (((abs(angle_r - abs(state[2]))
+                        / angle_r) * 2) - 1) * 2
+            # Position reward modification
+            pos_r = 0.418 / 2
+            reward += (((abs(pos_r - abs(state[0]))
+                        / pos_r) * 2) - 1) * 2
+        return reward
+    
     def learn(self):
-        self.turn = 0
         self.episode = 0
         n = 0
-        while True:
-            state = self.cart.state
-            y = self.predi_net.predict(state)
-            a = choose_action_net(y, self.epsilon)
-            next_state, _, end, _ = self.cart.step(a)
-            reward = -25 if end else 1
-            if reward == 1:
-                reward += (((abs((0.418 / 2) - abs(next_state[2])) / (0.418 / 2)) * 2) - 1) * 2
-                reward += (((abs((4.8 / 2) - abs(next_state[0])) / 2.4) * 2) - 1) * 2
-                #reward += abs((2.4) - abs(state[0])) * .6
-            q_values_next = self.predi_net.predict(next_state)
-            y[a] = reward + net_config.gamma * torch.max(q_values_next).item()
-            self.updat_net.update(state, y)
-            self.turn += 1
-            if self.visu:
-                self.cart.render()
-            if n % net_config.n_update == 0 and n:
-                self.predi_net = deepcopy(self.updat_net)
-            if self.turn >= 500:
-                end = True
-            if end:
-                self.end()
-            n += 1
+        while self.episode < 10000:
+            self.turn = 0
+            end = False
+            states = []
+            targets = []
+            while not end:
+                # 1. Init
+                state = self.cart.state
+                # 2. Choose action
+                q_values = self.predi_net.predict(state)
+                a = choose_action_net(q_values, self.epsilon)
+                # 3. Perform action
+                next_state, _, end, _ = self.cart.step(a)
+                # 4. Measure reward
+                reward = self.reward_optimisation(next_state, end)
+                q_values_next = self.predi_net.predict(next_state)
+                # 5. Calcul Q-Values
+                q_values[a] = reward + net_config.gamma * \
+                    max(q_values_next).item()
 
+                self.turn += 1
+                self.memory.append((state, a, next_state, reward, end))
+                # self.updat_net.update(state, q_values)
+                states.append(state)
+                targets.append(q_values)
+                if (self.turn % 20 and self.turn) or end:
+                    self.updat_net.update(states, targets)
+                    states = []
+                    targets = []
+
+                if self.turn >= 500:
+                    end = True
+                if self.visu:
+                    self.cart.render()
+
+            self.episode += 1
+            self.replay(20)
+            if self.episode % net_config.n_update == 0 and self.episode:
+                print("Update")
+                self.predi_net.model.load_state_dict(self.updat_net.model.state_dict())
+            self.end()
+            n += 1
+        
+        self.save()
         self.cart.close()
         self.plot_data.clear()
+
+    def replay(self, size):
+        data = random.sample(self.memory, size)
+        for state, action, next_state, reward, done in data:
+            q_values = self.predi_net.predict(state).tolist()
+            if done:
+                q_values[action] = reward
+            else:
+                # The only difference between the simple replay is in this line
+                # It ensures that next q values are predicted with the target network.
+                q_values_next = self.predi_net.predict(next_state)
+                q_values[action] = reward + net_config.gamma * torch.max(q_values_next).item()
+            self.updat_net.update(state, q_values)
+
 
     def end(self):
         self.plot_data.new_data(self.turn)
@@ -127,6 +172,7 @@ class CuteLearning():
             if self.best_consecutive_wins < self.consecutive_wins:
                 self.best_consecutive_wins = self.consecutive_wins
             if self.consecutive_wins > 200:
+                self.save()
                 print(("WIN IN " + str(self.episode) + " EPISODES\n") * 100)
         else:
             self.consecutive_wins = 0
@@ -135,7 +181,8 @@ class CuteLearning():
                 self.last_save = self.best_consecutive_wins
         print("Episode: ", self.episode, "\tTurn:",
               self.turn, "\tEpsilon:", self.epsilon,
-              "\tWins: ", self.consecutive_wins)
+              "\tWins: ", "{:3}".format(self.consecutive_wins),
+              "/", self.best_consecutive_wins)
         self.turn = 0
         self.cart.reset()
         if self.episode % config.graph_update == 0 and self.episode != 0:
@@ -147,7 +194,6 @@ class CuteLearning():
                 self.visu = False
                 self.cart.close()
         self.epsilon = max(self.epsilon * self.eps_decay, 0.01)
-        self.episode += 1
 
     def save(self):
         name = "model_cache/"
