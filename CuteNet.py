@@ -122,17 +122,17 @@ class CuteLearning():
                 q_values_next = self.predi_net.predict(next_state)
                 # 5. Calcul Q-Values
                 q_values[a] = reward + net_config.gamma * \
-                    max(q_values_next).item()
+                    torch.max(q_values_next).item()
 
                 self.turn += 1
                 self.memory.append((state, a, next_state, reward, end))
-                # self.updat_net.update(state, q_values)
-                states.append(state)
-                targets.append(q_values)
-                if (self.turn % 20 and self.turn) or end:
-                    self.updat_net.update(states, targets)
-                    states = []
-                    targets = []
+                self.updat_net.update(state, q_values)
+                # states.append(state)
+                # targets.append(q_values)
+                # if (self.turn % 20 and self.turn) or end:
+                #     self.updat_net.update(states, targets)
+                #     states = []
+                #     targets = []
 
                 if self.turn >= 500:
                     end = True
@@ -152,9 +152,11 @@ class CuteLearning():
         self.plot_data.clear()
 
     def replay(self, size):
+        if size > len(self.memory):
+            size = len(self.memory)
         data = random.sample(self.memory, size)
         for state, action, next_state, reward, done in data:
-            q_values = self.predi_net.predict(state).tolist()
+            q_values = self.predi_net.predict(state)
             if done:
                 q_values[action] = reward
             else:
