@@ -14,6 +14,11 @@ class Memory(Dataset):
     def add_data(self, data):
         self.data.append(data)
 
+
 if __name__ == "__main__":
     mem = Memory([0,1,2,3,4,5,6,7,8,9,10,11,12], 100)
     loader = DataLoader(mem, 2, True)
+    for i in loader:
+        print(i)
+    for i in loader:
+        print(i)
