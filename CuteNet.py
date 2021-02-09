@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import logging
 from collections import OrderedDict
 
 import matplotlib.pyplot as plt
@@ -19,7 +20,7 @@ import pickle
 from datetime import datetime
 
 import json
-
+from dataloader import Memory
 
 netlist = []
 n = 0
@@ -42,11 +43,16 @@ class DQN():
 
     def update(self, state, y):
         y_pred = self.model(torch.Tensor(state))
+        logging.info("state", state)
+        logging.info("torch tensor state", torch.Tensor(state))
+        logging.info("y_pred", y_pred)
+        logging.info("y", y)
+        logging.info("\n\n")
         loss = 0
         # for i in range(len(y)):
         #     loss += self.criterion(y_pred[i], y[i])
         # print(y_pred, y)
-        loss = self.criterion(y_pred[0], y[0])
+        loss = self.criterion(y_pred, torch.Tensor(y))
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -74,6 +80,8 @@ def graph(data, rm):
 
 
 from plot_data import PlotData
+
+
 
 class CuteLearning():
     def __init__(self):
@@ -110,7 +118,7 @@ class CuteLearning():
     def learn(self):
         self.episode = 0
         n = 0
-        while self.episode < 10000:
+        while self.episode < 10:
             self.turn = 0
             end = False
             states = []
@@ -119,7 +127,7 @@ class CuteLearning():
                 # 1. Init
                 state = self.cart.state
                 # 2. Choose action
-                q_values = self.predi_net.predict(state)
+                q_values = self.predi_net.predict(state).tolist()
                 a = choose_action_net(q_values, self.epsilon)
                 # 3. Perform action
                 next_state, _, end, _ = self.cart.step(a)
@@ -208,19 +216,20 @@ class CuteLearning():
         self.epsilon = max(self.epsilon * self.eps_decay, 0.01)
 
     def save(self):
-        name = "model_cache/"
-        name += str(self.best_consecutive_wins) + "Wins"
-        name += "_"
-        name += str(self.episode) + "Episodes"
-        name += "_"
-        now = datetime.now()
-        name += now.strftime("%d-%m %H:%M")
-        with open(name + ".mdl", "wb+") as f:
-            pickle.dump(self, f)
-        self.plot_data.save(name)
-        with open(name + ".json", "w+") as f:
-            json.dump([config, net_config], f, indent=4,
-                      default=lambda o: '<not serializable>')
+        pass
+        # name = "model_cache/"
+        # name += str(self.best_consecutive_wins) + "Wins"
+        # name += "_"
+        # name += str(self.episode) + "Episodes"
+        # name += "_"
+        # now = datetime.now()
+        # name += now.strftime("%d-%m %H:%M")
+        # with open(name + ".mdl", "wb+") as f:
+        #     pickle.dump(self, f)
+        # self.plot_data.save(name)
+        # with open(name + ".json", "w+") as f:
+        #     json.dump([config, net_config], f, indent=4,
+        #               default=lambda o: '<not serializable>')
 
 if __name__ == "__main__":
     Cutie = CuteLearning()

@@ -1,6 +1,6 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, RandomSampler, BatchSampler
 from collections import deque
-
+import random
 class Memory(Dataset):
     def __init__(self, data = [], memory_size = None):
         self.data = deque(data, memory_size)
@@ -13,12 +13,16 @@ class Memory(Dataset):
 
     def add_data(self, data):
         self.data.append(data)
+    
+    def get_batch(self, size):
+        if (size > len(self.data)):
+            size = len(self.data)
+        return random.sample(self.data, size)
+
 
 
 if __name__ == "__main__":
     mem = Memory([0,1,2,3,4,5,6,7,8,9,10,11,12], 100)
     loader = DataLoader(mem, 2, True)
-    for i in loader:
-        print(i)
-    for i in loader:
-        print(i)
+    rs = RandomSampler(mem, replacement = False)
+    bs = BatchSampler(rs, 5, False)
