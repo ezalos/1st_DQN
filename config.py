@@ -63,6 +63,8 @@ net_config.max_turns = 500
 GridS_conf.gsc_max_turns = np.linspace(200, 1000, 5)
 net_config.dropout = 0.1
 GridS_conf.gsc_dropout = np.linspace(0, 0.5, 5)
+net_config.early_stopping = False
+GridS_conf.gsc_early_stopping = [True, False]
 
 # Unused
 net_config.reward_loose = 0
@@ -76,7 +78,6 @@ net_config.max_episodes = 2500
 net_config.consecutive_wins_required = 200
 net_config.turn_threshold_to_win = 195
 
-net_config.early_stopping = False
 net_config.eval_episodes = 500
 
 user_config = DotDict()

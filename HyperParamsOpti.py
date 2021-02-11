@@ -14,7 +14,7 @@ class PersClassifier(BaseEstimator, ClassifierMixin):
                  gsc_soft_update=net_config.soft_update, gsc_tau=net_config.tau,
                  gsc_replay_nb_batch=net_config.replay_nb_batch, gsc_dropout=net_config.dropout,
                  gsc_reward_optimisation=net_config.reward_optimisation,
-                 gsc_early_stopping=net_config.early_stopping
+                 gsc_early_stopping=net_config.early_stopping,
                  gsc_learning_rate=net_config.learning_rate, gsc_layers=net_config.layers):
         """
         Called when initializing the classifier
@@ -83,7 +83,7 @@ class PersClassifier(BaseEstimator, ClassifierMixin):
                                         soft_update=self.gsc_soft_update, tau=self.gsc_tau,
                                         replay_nb_batch=int(self.gsc_replay_nb_batch), dropout=self.gsc_dropout,
                                         reward_optimisation=self.gsc_reward_optimisation,
-                                        early_stopping=self.early_stopping,
+                                        early_stopping=self.gsc_early_stopping,
                                         learning_rate=self.gsc_learning_rate, layers=self.gsc_layers, verbose=2)
         self._gsc_model_.learn()
         self._value = self._gsc_model_.best_consecutive_wins
