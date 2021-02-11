@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from config import config
+from config import config, user_config
 
 class PlotData():
     def __init__(self, running_mean_len = config.graph_running_mean):
@@ -25,11 +25,11 @@ class PlotData():
 
     def graph(self):
         if True:
-            plt.scatter(list(range(len(self.points))), self.points, s=.05, c="y")
+            plt.scatter(list(range(len(self.points))), self.points, s=.05, c="k")
         plt.plot(self.running_mean, c="b")
         plt.plot(self.running_mean_big, c="r")
         # plt.autoscale_view()
-        if config.graph_window:
+        if user_config.plot:
             plt.pause(0.05)
             plt.show()
 
