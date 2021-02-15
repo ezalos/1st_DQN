@@ -121,6 +121,8 @@ class CuteLearning():
         states, targets = self.make_batch()
         self.main_net.update(states, targets)
 
+    def upodato(self, state, reward, next_state, done):
+        
 
     def learn(self, episodes = 10000, replay = False):
         episode = 0
