@@ -1,3 +1,5 @@
+import numpy as np
+from ModelsManager import ModelsManager
 from utils import DotDict
 from functools import reduce
 
@@ -29,14 +31,13 @@ config.graph_window = True
 net_config = DotDict()
 GridS_conf = DotDict()
 
-import numpy as np
-
 # MODEL Hyper Parameters
 
 # GridSearchCV Params:
 net_config.layers = [4, 64, 128, 2]
 GridS_conf.gsc_layers = [[4, 64, 128, 2],
                          [4, 8, 16, 32, 2],
+                         [4, 8, 16, 32, 64, 2],
                          [4, 16, 256, 2],
                          [4, 6, 8, 4, 2]]
 net_config.learning_rate = 0.005
@@ -46,7 +47,9 @@ GridS_conf.gsc_gamma = np.linspace(0.5, 1, 5)
 net_config.n_update = 25
 GridS_conf.gsc_n_update = np.linspace(10, 200, 5)
 net_config.epsilon = 0.9
-GridS_conf.gsc_gamma = np.linspace(0.5, 1, 5)
+GridS_conf.gsc_epsilon = np.linspace(0.5, 1, 5)
+net_config.min_epsilon = 0.01
+GridS_conf.gsc_min_epsilon = np.linspace(0.01, 0.3, 5)
 net_config.eps_decay = 0.995
 GridS_conf.gsc_eps_decay = [0.99, 0.995, 0.999]
 net_config.batch = 100
@@ -66,19 +69,26 @@ GridS_conf.gsc_dropout = np.linspace(0, 0.5, 5)
 net_config.early_stopping = False
 GridS_conf.gsc_early_stopping = [True, False]
 
+net_config.ModelsManager = ModelsManager()
+# GridS_conf.gsc_ModelsManager = [ModelsManager()]
+
+#TODO add   min_epsilon
+#           ModelsManager
+
 # Unused
 net_config.reward_loose = 0
 net_config.reward_win = 1
 net_config.memory_size = 100_000
 
+net_config.seed = 42
 
 # Environnement Parameters
 net_config.max_turns = 500
-net_config.max_episodes = 2500
-net_config.consecutive_wins_required = 200
+net_config.max_episodes = 1500
+net_config.consecutive_wins_required = 100
 net_config.turn_threshold_to_win = 195
 
-net_config.eval_episodes = 500
+net_config.eval_episodes = 150
 
 user_config = DotDict()
 user_config.visu = False
@@ -87,4 +97,3 @@ user_config.visu_window = 5
 user_config.plot = False
 user_config.verbose = 2
 
-net_config.seed = 42

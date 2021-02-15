@@ -101,7 +101,8 @@ class CuteLearning():
                  replay_nb_batch=net_config.replay_nb_batch, dropout=net_config.dropout,
                  reward_optimisation=net_config.reward_optimisation,
                  learning_rate=net_config.learning_rate, layers=net_config.layers,
-                 verbose=2, early_stopping=net_config.early_stopping):
+                 verbose=2, early_stopping=net_config.early_stopping,
+                 min_epsilon=net_config.min_epsilon):
         # Reproductibility:
         torch.manual_seed(net_config.seed)
         np.random.seed(net_config.seed)
@@ -119,6 +120,7 @@ class CuteLearning():
         self.reward_optimisation = reward_optimisation
         self.learning_rate = learning_rate
         self.early_stopping = early_stopping
+        self.min_epsilon = min_epsilon
 
         # Env + Pytorch
         self.cart = CartPoleEnv()
@@ -134,6 +136,7 @@ class CuteLearning():
         self.best_consecutive_wins = 0
         self.last_save = 0
         self.memory = []
+        self.scores = []
 
         # Visu
         self.plot_data = PlotData()
@@ -164,7 +167,10 @@ class CuteLearning():
             for _ in _iter:
                 self.turn = 0
                 end = False
+                self.cart.reset()
+
                 while not end:
+
                     # 1. Init
                     state = self.cart.state
                     # 2. Choose action
@@ -180,10 +186,10 @@ class CuteLearning():
                     q_values[a] = reward + self.gamma * \
                         torch.max(q_values_next).item()
 
-                    self.turn += 1
-                    # loader = DataLoader(mem, 2, True)
+                    # Keeping track of data
                     self.memory.append((state, a, next_state, reward, end))
-                    # self.updat_net.update(state, q_values)
+
+                    # Network training
                     states.append(state)
                     targets.append(q_values)
                     if len(states) >= self.batch:
@@ -191,13 +197,23 @@ class CuteLearning():
                         states = []
                         targets = []
 
+                    # Showing environnement
                     if self.visu:
                         self.cart.render()
+
+                    self.turn += 1
+                    # End condition
                     if self.turn >= self.max_turns:
                         break
 
                 self.episode += 1
+                self.epsilon = max(
+                    self.epsilon * self.eps_decay, self.min_epsilon)
+
+                # Replay from memory
                 self.replay(self.replay_nb_batch)
+
+                # Double network update
                 if self.episode % self.n_update == 0 and self.episode:
                     if self.verbose == 1:
                         print("Update")
@@ -205,85 +221,125 @@ class CuteLearning():
                         self.soft_net_update(self.tau)
                     else:
                         self.predi_net.model.load_state_dict(self.updat_net.model.state_dict())
-                # tmp = self.turn
+
+
+                # User friendly things
                 self.end()
                 if user_config.verbose == 2:
-                    tepisodes.set_postfix(win=self.consecutive_wins,
-                                        w_b=self.best_consecutive_wins,
-                                        z_t=int(
+                    if self.scores:
+                        scr = self.scores[-1]['weird_metric']
+                    else:
+                        scr = 0
+                    tepisodes.set_postfix(cmb=self.consecutive_wins,
+                                        scr=scr,
+                                        trn=int(
                                             self.plot_data.running_mean_big[-1]),
                                         eps=int(self.epsilon * 100))
-                if self.consecutive_wins >= net_config.consecutive_wins_required:
-                    if self.last_save < self.consecutive_wins:
-                        self.save()
-                        self.last_save = self.consecutive_wins
-                    print(("\nWIN IN " + str(self.episode) + " EPISODES\n"))
-                    if net_config.early_stopping:
-                        break
+                # if self.consecutive_wins == net_config.consecutive_wins_required:
+                #     if self.last_save < self.consecutive_wins:
+                #         self.save()
+                #         self.last_save = self.consecutive_wins
+                #     print(("\nWIN IN " + str(self.episode) + " EPISODES\n"))
+                #     if net_config.early_stopping:
+                #         break
                 n += 1
+
+                if self.episode and (self.episode % 100) == 0:
+                    # print("\nEVALUATION")
+                    self.eval()
+
         self.cart.close()
         self.plot_data.clear()
 
+    def end(self):
+        self.plot_data.new_data(self.turn)
+        if self.turn > net_config.turn_threshold_to_win:
+            self.consecutive_wins += 1
+            if self.best_consecutive_wins < self.consecutive_wins:
+                self.best_consecutive_wins = self.consecutive_wins
+        else:
+            self.consecutive_wins = 0
+            # if self.last_save < self.best_consecutive_wins and 50 <= self.best_consecutive_wins:
+            #     # self.save()
+            #     self.last_save = self.best_consecutive_wins
+        # if self.verbose == 1:
+        #     print("Episode: ", self.episode, "\tTurn:",
+        #           self.turn, "\tEpsilon:", self.epsilon,
+        #           "\tWins: ", "{:3}".format(self.consecutive_wins),
+        #           "/", self.best_consecutive_wins)
+        if user_config.plot:
+            if self.episode % config.graph_update == 0 and self.episode != 0:
+                self.plot_data.graph()
+        if self.visu_update:
+            if self.episode % self.visu_update == 0:
+                self.visu = True
+            if self.episode % self.visu_update == self.visu_window:
+                self.visu = False
+                self.cart.close()
+
     def eval(self, nb_episodes=net_config.eval_episodes):
         self.predi_net.model.eval()
-        self.cart.reset()
-        self.episode = 0
         train_iter = list(range(nb_episodes))
-        vic_list = []
+        mean_list = []
         turns_list = []
-        best_win_combo = 0
-        win_combo = 0
 
-        with tqdm(train_iter, desc="CartPole eval <3 ", unit="episode") as tepisodes:
-            _iter = tepisodes if self.verbose == 2 else train_iter
-            for _ in _iter:
-                self.turn = 0
-                end = False
-                while not end:
-                    # Choose action
-                    q_values = self.predi_net.predict(self.cart.state)
-                    a = choose_action_net(q_values, 0)
-                    # Perform action
-                    _, _, end, _ = self.cart.step(a)
-                    self.turn += 1
-                    if self.visu:
-                        self.cart.render()
-                    if self.turn >= self.max_turns:
-                        break
+        # with tqdm(train_iter, desc="CartPole eval <3 ", unit="episode") as tepisodes:
+            # _iter = tepisodes if self.verbose == 2 and False else train_iter
+        _iter = train_iter
+        for _ in _iter:
+            turn = 0
+            self.cart.reset()
+            end = False
+            while not end:
+                # Choose action
+                q_values = self.predi_net.predict(self.cart.state)
+                a = choose_action_net(q_values, 0)
+                # Perform action
+                _, _, end, _ = self.cart.step(a)
+                turn += 1
+                if self.visu:
+                    self.cart.render()
+                if turn >= 200:
+                    break
 
-                self.cart.reset()
-                self.episode += 1
+            turns_list.append(min(turn, 200))
+            if len(turns_list) >= net_config.consecutive_wins_required:
+                mean_list.append(
+                    np.mean(turns_list[-net_config.consecutive_wins_required:]))
+                # if self.verbose == 2 and False:
+                #     tepisodes.set_postfix(scr=mean_list[-1])
 
-                if self.turn >= net_config.turn_threshold_to_win:
-                    vic = 1
-                    win_combo += 1
-                    if win_combo > best_win_combo:
-                        best_win_combo = win_combo
-                else:
-                    vic = 0
-                    win_combo = 0
-                vic_list.append(vic)
-                turns_list.append(min(self.turn, 200))
+        scores = {}
+        scores['minimum'] = np.min(mean_list)
+        scores['average'] = np.mean(turns_list)
+        scores['maximum'] = np.max(mean_list)
 
-                turn_mean = np.mean(turns_list) / 200
-                vic_mean = np.mean(vic_list)
-                tepisodes.set_postfix(win=best_win_combo,
-                                      trn=turn_mean,
-                                      vic=vic_mean)
+        self.scores.append(scores)
+        scores['weird_metric'] = self.get_score()
 
-        # print(turns_list, vic_list)
-        # for t, v in zip(turns_list, vic_list):
-        #     print(t, "\t", v)
-        self.turn_mean = np.mean(turns_list) / 200
-        self.vic_mean = np.mean(vic_list)
-        self.combo = best_win_combo / 200
-        # print("turn_mean: ", self.turn_mean)
-        # print("vic_mean: ", self.vic_mean)
-        # print("combo: ", self.combo)
+        if net_config.ModelsManager:
+            end = True if self.episode == net_config.max_episodes else False
+            should_backup = net_config.ModelsManager.new_score(
+                self.my_params, scores, str(self.episode), end)
+            if should_backup:
+                self.save()
+        self.predi_net.model.train()
+        return scores['minimum']
 
-        val = (self.combo * 5) + (self.vic_mean * 3) + self.turn_mean
-
-        return val 
+    def get_score(self):
+        points = net_config.max_episodes
+        end = False
+        for score in self.scores:
+            if score['average'] >= 195:
+                points += (score['minimum'] / 2)
+                end = True
+                break
+            if points >= 100:
+                points -= 100
+        if not end:
+            points = (self.scores[-1]['minimum'] / 2.1)
+        # print("Model points: ", points)
+        return int(points)
 
     def replay(self, batch_nb):
         if (batch_nb * self.batch) > len(self.memory):
@@ -331,41 +387,13 @@ class CuteLearning():
         self.updat_net.model.load_state_dict(self.predi_net.model.state_dict())
         # self.updat_net.update(state, q_values)
 
-
-    def end(self):
-        self.plot_data.new_data(self.turn)
-        if self.turn > net_config.turn_threshold_to_win:
-            self.consecutive_wins += 1
-            if self.best_consecutive_wins < self.consecutive_wins:
-                self.best_consecutive_wins = self.consecutive_wins
-        else:
-            self.consecutive_wins = 0
-            if self.last_save * 1.2 < self.best_consecutive_wins and 50 <= self.best_consecutive_wins:
-                self.save()
-                self.last_save = self.best_consecutive_wins
-        if self.verbose == 1:
-            print("Episode: ", self.episode, "\tTurn:",
-                self.turn, "\tEpsilon:", self.epsilon,
-                "\tWins: ", "{:3}".format(self.consecutive_wins),
-                "/", self.best_consecutive_wins)
-        self.turn = 0
-        self.cart.reset()
-        if user_config.plot:
-            if self.episode % config.graph_update == 0 and self.episode != 0:
-                self.plot_data.graph()
-        if self.visu_update:
-            if self.episode % self.visu_update == 0:
-                self.visu = True
-            if self.episode % self.visu_update == self.visu_window:
-                self.visu = False
-                self.cart.close()
-        self.epsilon = max(self.epsilon * self.eps_decay, 0.01)
-
     def save(self):
         if self.verbose == 1:
             print("Saving")
         name = "model_cache/"
-        name += str(self.best_consecutive_wins) + "Wins"
+        name += str(self.scores[-1]['weird_metric']) + "Points"
+        name += "_"
+        name += str(self.scores[-1]['minimum']) + "WinRatio"
         name += "_"
         name += str(self.episode) + "Episodes"
         name += "_"
