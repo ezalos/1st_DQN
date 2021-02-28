@@ -23,6 +23,7 @@ from dataloader import Memory
 
 from tqdm import tqdm
 
+
 def create_net_list(layers, dropout):
     netlist = []
     n = 0
@@ -39,17 +40,21 @@ def create_net_list(layers, dropout):
 
 
 class DQN():
-    def __init__(self, layers = net_config.layers, learning_rate=net_config.learning_rate, dropout=net_config.dropout):
+    def __init__(self, layers=net_config.layers, learning_rate=net_config.learning_rate, dropout=net_config.dropout):
         self.model = nn.Sequential(* create_net_list(layers, dropout))
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), learning_rate)
+        self.optimizer = torch.optim.Adam(
+        self.model.parameters(), learning_rate)
         self.model.train()
 
     def update(self, state, y):
+        # y = torch.as_tensor(y)
         y_pred = self.model(torch.Tensor(state))
         loss = 0
+        # print("\n\n\nypred", y_pred, "\n\ny ", y)
         for i in range(len(y)):
             loss += self.criterion(y_pred[i], y[i])
+        # loss = self.criterion(y_pred, y)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -191,7 +196,7 @@ class CuteLearning():
 
                     # Network training
                     states.append(state)
-                    targets.append(q_values)
+                    targets.append(q_values)#.tolist())
                     if len(states) >= self.batch:
                         self.updat_net.update(states, targets)
                         states = []
