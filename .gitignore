@@ -1,2 +1,5 @@
 model_cache
 *.p
+.vscode
+.ipynb_checkpoints
+__pycache__
