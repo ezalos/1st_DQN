@@ -110,6 +110,7 @@ class PersClassifier(BaseEstimator, ClassifierMixin):
 
 if __name__ == "__main__":
     from sklearn.model_selection import GridSearchCV
+    from sklearn.model_selection import RandomizedSearchCV
     from sklearn.utils.estimator_checks import check_estimator
 
     print("Starting check")
@@ -122,10 +123,16 @@ if __name__ == "__main__":
     X_test = [i + 3 for i in range(-5, 95, 5)]
     tuned_params = GridS_conf
 
-    gs = GridSearchCV(PersClassifier(), tuned_params, verbose=4)
+    #gs = GridSearchCV(PersClassifier(), tuned_params, verbose=4)
+    gs = RandomizedSearchCV(PersClassifier(), tuned_params, verbose=4)
 
     # for some reason I have to pass y with same shape
     # otherwise gridsearch throws an error. Not sure why.
-    gs.fit(X_test, y=[1 for i in range(20)])
+    y_test = np.array([1 for i in range(len(X_test))])
+    y_test = y_test.reshape(-1, 1)
+    X_test = np.array(X_test)
+    X_test = X_test.reshape(-1, 1)
+
+    gs.fit(X_test, y=y_test)
 
     print(gs.best_params_)  # {'intValue': -10} # and that is what we expect :)
