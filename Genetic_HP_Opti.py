@@ -25,7 +25,7 @@ cv = EvolutionaryAlgorithmSearchCV(estimator=PersClassifier(),
                                    gene_mutation_prob=0.10,
                                    gene_crossover_prob=0.5,
                                    tournament_size=3,
-                                   generations_number=5,
-                                   n_jobs=2)
+                                   generations_number=10,
+                                   n_jobs=1)
 ret = cv.fit(X, y)
 print(ret)

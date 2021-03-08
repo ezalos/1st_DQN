@@ -8,33 +8,33 @@ import numpy as np
 class PersClassifier(BaseEstimator, ClassifierMixin):
     """An example of classifier"""
 
-    def __init__(self, gsc_epsilon=net_config.epsilon, gsc_min_epsilon=net_config.min_epsilon, gsc_eps_decay=net_config.eps_decay,
-                 gsc_n_update=net_config.n_update, gsc_max_turns=net_config.max_turns,
-                 gsc_batch=net_config.batch, gsc_gamma=net_config.gamma,
-                 gsc_soft_update=net_config.soft_update, gsc_tau=net_config.tau,
-                 gsc_replay_nb_batch=net_config.replay_nb_batch, gsc_dropout=net_config.dropout,
-                 gsc_reward_optimisation=net_config.reward_optimisation,
-                 gsc_early_stopping=net_config.early_stopping, #gsc_ModelsManager=net_config.ModelsManager,
-                 gsc_learning_rate=net_config.learning_rate, gsc_layers=net_config.layers):
+    def __init__(self, epsilon=net_config.epsilon, min_epsilon=net_config.min_epsilon, eps_decay=net_config.eps_decay,
+                 n_update=net_config.n_update, max_turns=net_config.max_turns,
+                 batch=net_config.batch, gamma=net_config.gamma,
+                 soft_update=net_config.soft_update, tau=net_config.tau,
+                 replay_nb_batch=net_config.replay_nb_batch, dropout=net_config.dropout,
+                 reward_optimisation=net_config.reward_optimisation,
+                 early_stopping=net_config.early_stopping, #ModelsManager=net_config.ModelsManager,
+                 learning_rate=net_config.learning_rate, layers=net_config.layers):
         """
         Called when initializing the classifier
         """
-        self.gsc_layers = gsc_layers
-        self.gsc_dropout = gsc_dropout
-        self.gsc_epsilon = gsc_epsilon
-        self.gsc_min_epsilon = gsc_min_epsilon
-        self.gsc_eps_decay = gsc_eps_decay
-        self.gsc_n_update = gsc_n_update
-        self.gsc_max_turns = gsc_max_turns
-        self.gsc_batch = gsc_batch
-        self.gsc_gamma = gsc_gamma
-        self.gsc_tau = gsc_tau
-        self.gsc_early_stopping = gsc_early_stopping
-        self.gsc_replay_nb_batch = gsc_replay_nb_batch
-        self.gsc_soft_update = gsc_soft_update
-        self.gsc_reward_optimisation = gsc_reward_optimisation
-        self.gsc_learning_rate = gsc_learning_rate
-        # self.gsc_ModelsManager = gsc_ModelsManager
+        self.layers = layers
+        self.dropout = dropout
+        self.epsilon = epsilon
+        self.min_epsilon = min_epsilon
+        self.eps_decay = eps_decay
+        self.n_update = n_update
+        self.max_turns = max_turns
+        self.batch = batch
+        self.gamma = gamma
+        self.tau = tau
+        self.early_stopping = early_stopping
+        self.replay_nb_batch = replay_nb_batch
+        self.soft_update = soft_update
+        self.reward_optimisation = reward_optimisation
+        self.learning_rate = learning_rate
+        # self.ModelsManager = ModelsManager
 
 
     def fit(self, X, y=None):
@@ -46,28 +46,28 @@ class PersClassifier(BaseEstimator, ClassifierMixin):
         """
 
         if False:
-            assert (type(self.gsc_epsilon) ==
-                    float), "gsc_epsilon parameter must be float"
-            assert (type(self.gsc_learning_rate) ==
-                    float), "gsc_learning_rate parameter must be float"
-            assert (type(self.gsc_eps_decay) ==
-                    float), "gsc_eps_decay parameter must be float"
-            assert (type(self.gsc_n_update) ==
-                    int), "gsc_n_update parameter must be integer"
-            assert (type(self.gsc_max_turns) ==
-                    int), "gsc_max_turns parameter must be integer"
-            assert (type(self.gsc_batch) ==
-                    int), "gsc_batch parameter must be integer"
-            assert (type(self.gsc_gamma) ==
-                    float), "gsc_gamma parameter must be float"
-            assert (type(self.gsc_tau) ==
-                    float), "gsc_tau parameter must be float"
-            assert (type(self.gsc_replay_nb_batch) ==
-                    int), "gsc_replay_nb_batch parameter must be integer"
-            assert (type(self.gsc_soft_update) ==
-                    bool), "gsc_soft_update parameter must be bool"
-            assert (type(self.gsc_reward_optimisation) ==
-                    bool), "gsc_reward_optimisation parameter must be bool"
+            assert (type(self.epsilon) ==
+                    float), "epsilon parameter must be float"
+            assert (type(self.learning_rate) ==
+                    float), "learning_rate parameter must be float"
+            assert (type(self.eps_decay) ==
+                    float), "eps_decay parameter must be float"
+            assert (type(self.n_update) ==
+                    int), "n_update parameter must be integer"
+            assert (type(self.max_turns) ==
+                    int), "max_turns parameter must be integer"
+            assert (type(self.batch) ==
+                    int), "batch parameter must be integer"
+            assert (type(self.gamma) ==
+                    float), "gamma parameter must be float"
+            assert (type(self.tau) ==
+                    float), "tau parameter must be float"
+            assert (type(self.replay_nb_batch) ==
+                    int), "replay_nb_batch parameter must be integer"
+            assert (type(self.soft_update) ==
+                    bool), "soft_update parameter must be bool"
+            assert (type(self.reward_optimisation) ==
+                    bool), "reward_optimisation parameter must be bool"
             if not np.iscomplexobj(X):
                 try:
                     X = np.array(X, dtype=float)
@@ -79,16 +79,16 @@ class PersClassifier(BaseEstimator, ClassifierMixin):
         #     raise ValueError("X: " + str(type(X)))
         # assert (type(self.stringParam) == str), "stringValue parameter must be string"
         # assert (len(X) == 20), "X must be list with numerical values."
-        self._gsc_model_ = CuteLearning(epsilon=self.gsc_epsilon, eps_decay=self.gsc_eps_decay,
-                                        n_update=int(self.gsc_n_update), max_turns=int(self.gsc_max_turns),
-                                        batch=int(self.gsc_batch), gamma=self.gsc_gamma,
-                                        soft_update=self.gsc_soft_update, tau=self.gsc_tau,
-                                        replay_nb_batch=int(self.gsc_replay_nb_batch), dropout=self.gsc_dropout,
-                                        reward_optimisation=self.gsc_reward_optimisation, #ModelsManager=net_config.ModelsManager,
-                                        early_stopping=self.gsc_early_stopping, min_epsilon=self.gsc_min_epsilon,
-                                        learning_rate=self.gsc_learning_rate, layers=self.gsc_layers, verbose=2)
-        self._gsc_model_.learn()
-        self._value = self._gsc_model_.best_consecutive_wins
+        self._model_ = CuteLearning(epsilon=self.epsilon, eps_decay=self.eps_decay,
+                                        n_update=int(self.n_update), max_turns=int(self.max_turns),
+                                        batch=int(self.batch), gamma=self.gamma,
+                                        soft_update=self.soft_update, tau=self.tau,
+                                        replay_nb_batch=int(self.replay_nb_batch), dropout=self.dropout,
+                                        reward_optimisation=self.reward_optimisation, #ModelsManager=net_config.ModelsManager,
+                                        early_stopping=self.early_stopping, min_epsilon=self.min_epsilon,
+                                        learning_rate=self.learning_rate, layers=self.layers, verbose=2)
+        self._model_.learn()
+        self._value = self._model_.best_consecutive_wins
         return self
 
     def _meaning(self, x):
@@ -103,7 +103,7 @@ class PersClassifier(BaseEstimator, ClassifierMixin):
 
     def score(self, X, y=None):
         X = check_array(X)
-        self._value = self._gsc_model_.get_score()
+        self._value = self._model_.get_score()
         # check_X_y(X, X)
         # counts number of values bigger than mean
         return(self._value)

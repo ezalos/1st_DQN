@@ -249,7 +249,7 @@ class CuteLearning():
                 #         break
                 n += 1
 
-                if self.episode and (self.episode % 100) == 0:
+                if self.episode and (self.episode % net_config.eval_step) == 0:
                     # print("\nEVALUATION")
                     self.eval()
 
@@ -336,13 +336,13 @@ class CuteLearning():
         end = False
         for score in self.scores:
             if score['average'] >= 195:
-                points += (score['minimum'] / 2)
+                points += (score['minimum'] / 200) * net_config.eval_step
                 end = True
                 break
-            if points >= 100:
-                points -= 100
+            if points >= net_config.eval_step:
+                points -= net_config.eval_step
         if not end:
-            points = (self.scores[-1]['minimum'] / 2.1)
+            points = (self.scores[-1]['minimum'] / 201) * net_config.eval_step
         # print("Model points: ", points)
         return int(points)
 
