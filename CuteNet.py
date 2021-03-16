@@ -167,8 +167,10 @@ class CuteLearning():
         states = []
         targets = []
         train_iter = list(range(net_config.max_episodes))
-        with tqdm(train_iter, desc="CartPole <3 ", unit="episode") as tepisodes:
-            _iter = tepisodes if self.verbose == 2 else train_iter
+        if True:
+        #with tqdm(train_iter, desc="CartPole <3 ", unit="episode") as tepisodes:
+            #_iter = tepisodes if self.verbose == 2 else train_iter
+            _iter = train_iter
             for _ in _iter:
                 self.turn = 0
                 end = False
@@ -235,11 +237,11 @@ class CuteLearning():
                         scr = self.scores[-1]['weird_metric']
                     else:
                         scr = 0
-                    tepisodes.set_postfix(cmb=self.consecutive_wins,
-                                        scr=scr,
-                                        trn=int(
-                                            self.plot_data.running_mean_big[-1]),
-                                        eps=int(self.epsilon * 100))
+                    #tepisodes.set_postfix(cmb=self.consecutive_wins,
+                    #                    scr=scr,
+                    #                    trn=int(
+                    #                        self.plot_data.running_mean_big[-1]),
+                    #                    eps=int(self.epsilon * 100))
                 # if self.consecutive_wins == net_config.consecutive_wins_required:
                 #     if self.last_save < self.consecutive_wins:
                 #         self.save()
@@ -393,6 +395,7 @@ class CuteLearning():
         # self.updat_net.update(state, q_values)
 
     def save(self):
+        return None
         if self.verbose == 1:
             print("Saving")
         name = "model_cache/"

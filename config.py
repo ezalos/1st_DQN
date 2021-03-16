@@ -98,5 +98,5 @@ user_config.visu = False
 user_config.visu_update = False  # 300
 user_config.visu_window = 5
 user_config.plot = False
-user_config.verbose = 2
+user_config.verbose = False#2
 

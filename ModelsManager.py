@@ -75,6 +75,7 @@ class ModelsManager():
 			valu[0].append(v)
 		df = pd.DataFrame(valu, columns=name)
 		df.to_csv(self.backup_dir + "/" + key + ".csv", index=False)
+		print(df)
 
 
 	def add_line(self, key):

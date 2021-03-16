@@ -20,12 +20,12 @@ cv = EvolutionaryAlgorithmSearchCV(estimator=PersClassifier(),
                                    params=paramgrid,
                                    scoring=None,
                                    cv=2,
-                                   verbose=10,
+                                   verbose=1,
                                    population_size=50,
                                    gene_mutation_prob=0.10,
                                    gene_crossover_prob=0.5,
                                    tournament_size=3,
                                    generations_number=10,
-                                   n_jobs=1)
+                                   n_jobs=4)
 ret = cv.fit(X, y)
 print(ret)
